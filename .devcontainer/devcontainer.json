@@ -1,0 +1,30 @@
+{
+	// Dev Container name (not Container name)
+	"name": "ros2_study",
+	// Change the default user from root user
+	"remoteUser": "vscode", 
+	// Specify where in the Container to place the workspace opened in VSCode.
+	"workspaceFolder": "/home/vscode/ros2_projects",
+	// Mount setting
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/ros2_projects,type=bind,consistency=cached",
+	// Other settings
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"ms-toolsai.jupyter", 
+				"ms-toolsai.jupyter-keymap", 
+				"ms-toolsai.jupyter-renderers"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/usr/local/bin/python",
+				"jupyter.alwaysTrustNotebooks": true
+			}
+		}
+	},
+	"postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/ros2_projects && mkdir -p /home/vscode/ros2_projects/ros2_ws/src"
+}
