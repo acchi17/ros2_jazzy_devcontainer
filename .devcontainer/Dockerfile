@@ -1,5 +1,5 @@
 # Download base imgae if it doesn't exist locally
-FROM ros:jazzy
+FROM osrf/ros:jazzy-desktop
 
 # Install required packages
 RUN apt-get update && \
@@ -20,7 +20,17 @@ RUN apt-get update && \
     sudo \
     vim \
     wget \
+    # Gazebo related packages
     ros-jazzy-ros-gz \
+    # TurtleBot3 related packages
+    ros-jazzy-turtlebot3 \
+    ros-jazzy-turtlebot3-simulations \
+    ros-jazzy-turtlebot3-msgs \
+    # Nav2 related packages
+    ros-jazzy-navigation2 \
+    ros-jazzy-nav2-bringup \
+    # SLAM related packages
+    ros-jazzy-slam-toolbox \
     && rm -rf /var/lib/apt/lists/*
 
 # Locale settings
@@ -53,6 +63,9 @@ RUN mkdir -p /home/$USERNAME/ros2_projects/ros2_ws/src \
 RUN echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> /home/$USERNAME/.bashrc \
     && echo "export HISTSIZE=10000" >> /home/$USERNAME/.bashrc \
     && echo "export HISTFILESIZE=10000" >> /home/$USERNAME/.bashrc
+
+# TurtleBot3 environment variable settings
+ENV TURTLEBOT3_MODEL=waffle_pi
 
 # Set default user
 USER $USERNAME
