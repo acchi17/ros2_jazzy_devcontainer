@@ -20,17 +20,13 @@ RUN apt-get update && \
     sudo \
     vim \
     wget \
-    # Gazebo related packages
-    ros-jazzy-ros-gz \
-    # TurtleBot3 related packages
-    ros-jazzy-turtlebot3 \
-    ros-jazzy-turtlebot3-simulations \
-    ros-jazzy-turtlebot3-msgs \
     # Nav2 related packages
     ros-jazzy-navigation2 \
     ros-jazzy-nav2-bringup \
     # SLAM related packages
     ros-jazzy-slam-toolbox \
+    # TurtleBot3 related packages
+    #ros-jazzy-nav2-minimal-tb* \
     && rm -rf /var/lib/apt/lists/*
 
 # Locale settings
@@ -65,7 +61,7 @@ RUN echo "source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash" >> 
     && echo "export HISTFILESIZE=10000" >> /home/$USERNAME/.bashrc
 
 # TurtleBot3 environment variable settings
-ENV TURTLEBOT3_MODEL=waffle_pi
+#ENV TURTLEBOT3_MODEL=waffle_pi
 
 # Set default user
 USER $USERNAME
