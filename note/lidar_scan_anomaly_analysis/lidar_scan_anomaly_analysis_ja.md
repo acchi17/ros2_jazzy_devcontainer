@@ -84,11 +84,11 @@ ros2 launch nav2_bringup tb3_simulation_launch.py slam:=True world:=./custom_tb3
 
 ![対策後のRViz2画面](ref/rviz2_ok_800x500.png)
 
-## 5. 原因の推定
+## 5. 原因の推定(by AI)
 
 問題の根本原因は完全には特定されていませんが、以下の要因が考えられます：
 
-### 主要な推定原因(by AI)
+### 主要な推定原因
 1. **Gazeboの数値計算精度問題**
    - 20mという長距離でのレイキャスティング計算で数値誤差が蓄積
    - GPU LiDARプラグインの内部処理での浮動小数点精度の限界
@@ -104,7 +104,7 @@ ros2 launch nav2_bringup tb3_simulation_launch.py slam:=True world:=./custom_tb3
    - レイの終端処理での異常値生成
    - ハードウェア固有の計算精度問題
 
-### 考察(by AI)
+### 考察
 理論的には100x100mの地面が定義されている環境で20mのレーザースキャナーは問題なく動作するはずですが、実際には異常が発生しました。これはGazeboシミュレーターの内部実装における制限や精度の問題が原因と考えられます。
 
 ## 6. 技術的背景
