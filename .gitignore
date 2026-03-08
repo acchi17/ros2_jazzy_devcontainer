@@ -1,5 +1,3 @@
-# ROS2 workspace
-
 # ROS2 build artifacts
 build/
 devel/
