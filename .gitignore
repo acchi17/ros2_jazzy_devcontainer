@@ -3,7 +3,8 @@
 
 # Dir for personal work
 /memo
-/sample_models
+/gazebo_models
 
-# Some text files
-*.txt
+# Some text files in root
+/*.md
+/*.txt
