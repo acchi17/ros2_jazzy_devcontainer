@@ -1,5 +1,14 @@
 # ROS2 workspace
-/ros2_ws
+
+# ROS2 build artifacts
+build/
+devel/
+install/
+log/
+
+# Python related
+*.pyc
+__pycache__/
 
 # Dir for personal work
 /memo
