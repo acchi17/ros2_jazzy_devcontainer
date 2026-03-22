@@ -1,14 +1,25 @@
+import rclpy.logging
+
 class MockPigpio:
     OUTPUT = 'OUTPUT'
 
     def __init__(self):
-        pass
+        self.logger = rclpy.logging.get_logger('mock_pigpio')
 
     def set_mode(self, pin, mode):
-        print(f'[MockGPIO] set_mode(pin={pin}, mode={mode})')
+        try:
+            self.logger.info(f'set_mode(pin={pin}, mode={mode})')
+        except Exception:
+            pass
 
     def set_servo_pulsewidth(self, pin, pulse):
-        print(f'[MockGPIO] set_servo_pulsewidth(pin={pin}, pulse={pulse})')
+        try:
+            self.logger.info(f'set_servo_pulsewidth(pin={pin}, pulse={pulse})')
+        except Exception:
+            pass
 
     def stop(self):
-        print('[MockGPIO] stop()')
+        try:
+            self.logger.info('stop()')
+        except Exception:
+            pass

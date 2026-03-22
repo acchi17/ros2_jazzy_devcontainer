@@ -17,6 +17,7 @@ RUN apt-get update && \
     python3-rosdep \
     python3-setuptools \
     python3-vcstool \
+    python3-pigpio \
     sudo \
     vim \
     wget \

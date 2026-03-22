@@ -15,7 +15,7 @@ class TwistToPwmNode(Node):
 
         self.mapper = TwistMapper(max_speed=1.0, max_turn=1.0)
         self.esc = PwmDriver(gpio_pin=18, use_mock_gpio=use_mock_gpio)   # 例: ESC
-        self.servo = PwmDriver(gpio_pin=19, use_mock_gpio=use_mock_gpio) # 例: ステアリングサーボ
+        self.servo = PwmDriver(gpio_pin=19, use_mock_gpio=use_mock_gpio) # 例: Steering Servo
 
         topic_name = '/cmd_vel'
         qos_depth = 10
@@ -53,7 +53,18 @@ def main(args=None):
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        #rclpy.shutdown()
+        # Use a safe shutdown to avoid exceptions if SIGINT already triggered shutdown
+        try:
+            # Prefer try_shutdown when available (ROS 2 Jazzy+); fall back to guard
+            if hasattr(rclpy, 'try_shutdown'):
+                rclpy.try_shutdown()
+            else:
+                if rclpy.ok():
+                    rclpy.shutdown()
+        except Exception:
+            # Ensure process exits cleanly even if shutdown was already called
+            pass
 
 if __name__ == '__main__':
     main()
