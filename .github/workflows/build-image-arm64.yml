@@ -35,5 +35,5 @@ jobs:
           platforms: linux/arm64
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-jazzy-desktop-image:${{ steps.datetime.outputs.tag }}
-          cache-from: type=gha        # GitHub Actionsキャッシュを使う
+          cache-from: type=gha
           cache-to: type=gha,mode=max
