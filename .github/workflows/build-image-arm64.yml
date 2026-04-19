@@ -34,6 +34,6 @@ jobs:
           file: .devcontainer/Dockerfile
           platforms: linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/myimage:${{ steps.datetime.outputs.tag }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-jazzy-desktop-image:${{ steps.datetime.outputs.tag }}
           cache-from: type=gha        # GitHub Actionsキャッシュを使う
           cache-to: type=gha,mode=max
