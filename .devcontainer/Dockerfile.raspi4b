@@ -1,5 +1,5 @@
 # Download base imgae if it doesn't exist locally
-FROM amd64/ros:jazzy-perception
+FROM arm64v8/ros:jazzy-perception
 
 # Install required packages
 RUN apt-get update && \

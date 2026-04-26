@@ -31,7 +31,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: .devcontainer/Dockerfile
+          file: .devcontainer/Dockerfile.raspi4b
           platforms: linux/arm64
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-jazzy-desktop-image:${{ steps.datetime.outputs.tag }}
