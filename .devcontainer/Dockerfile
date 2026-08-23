@@ -34,7 +34,7 @@ RUN apt-get update && \
     # Remove apt lists to keep image slim and ensure fresh indexes
     && rm -rf /var/lib/apt/lists/*
 
-# Locale settings
+# Linux OS-level locale configuration
 RUN locale-gen en_US en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 ENV LANG en_US.UTF-8

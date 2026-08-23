@@ -31,9 +31,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: .devcontainer/Dockerfile.raspi4b
+          file: .devcontainer/Dockerfile.raspi
           platforms: linux/arm64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-jazzy-desktop-image:${{ steps.datetime.outputs.tag }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/ros2-jazzy-image-for-raspi:${{ steps.datetime.outputs.tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/ros2-jazzy-image-for-raspi:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

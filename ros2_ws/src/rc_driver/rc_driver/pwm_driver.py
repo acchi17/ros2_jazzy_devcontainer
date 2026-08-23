@@ -1,5 +1,5 @@
 class PwmDriver:
-    def __init__(self, gpio_pin, use_mock_gpio=False):
+    def __init__(self, gpio_pin, use_mock_gpio=False, pigpiod_host='localhost', pigpiod_port=8888):
         self.gpio_pin = gpio_pin
         if use_mock_gpio:
             from rc_driver.mock_pigpio import MockPigpio
@@ -7,7 +7,7 @@ class PwmDriver:
             self.pi.set_mode(self.gpio_pin, MockPigpio.OUTPUT)
         else:
             import pigpio  # type: ignore
-            self.pi = pigpio.pi()
+            self.pi = pigpio.pi(pigpiod_host, pigpiod_port)
             self.pi.set_mode(self.gpio_pin, pigpio.OUTPUT)
 
     def set_value(self, value):
