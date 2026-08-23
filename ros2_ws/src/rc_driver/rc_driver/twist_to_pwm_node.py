@@ -11,11 +11,17 @@ class TwistToPwmNode(Node):
         super().__init__('twist_to_pwm')
 
         self.declare_parameter('use_mock_gpio', False)
+        self.declare_parameter('pigpiod_host', 'localhost')
+        self.declare_parameter('pigpiod_port', 8888)
         use_mock_gpio = self.get_parameter('use_mock_gpio').get_parameter_value().bool_value
+        pigpiod_host = self.get_parameter('pigpiod_host').get_parameter_value().string_value
+        pigpiod_port = self.get_parameter('pigpiod_port').get_parameter_value().integer_value
 
         self.mapper = TwistMapper(max_speed=1.0, max_turn=1.0)
-        self.esc = PwmDriver(gpio_pin=18, use_mock_gpio=use_mock_gpio)   # 例: ESC
-        self.servo = PwmDriver(gpio_pin=19, use_mock_gpio=use_mock_gpio) # 例: Steering Servo
+        self.esc = PwmDriver(gpio_pin=18, use_mock_gpio=use_mock_gpio,
+                              pigpiod_host=pigpiod_host, pigpiod_port=pigpiod_port)   # 例: ESC
+        self.servo = PwmDriver(gpio_pin=19, use_mock_gpio=use_mock_gpio,
+                                pigpiod_host=pigpiod_host, pigpiod_port=pigpiod_port) # 例: Steering Servo
 
         topic_name = '/cmd_vel'
         qos_depth = 10

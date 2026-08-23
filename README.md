@@ -1,6 +1,6 @@
-# ARM64 Docker Image Build Guide (ROS 2 Jazzy Devcontainer)
+# ARM64 Docker Image Build Guide
 
-This repository includes a GitHub Actions workflow and a devcontainer Dockerfile for building an ARM64 Docker image (e.g., for Raspberry Pi 4 or any aarch64 host).
+This repository includes a GitHub Actions workflow and Dockerfile for building an ARM64 Docker image for Raspberry Pi.
 
 Supported path:
 - Build and push via GitHub Actions (recommended for reproducible, cached builds)
@@ -12,7 +12,7 @@ See the workflow in [.github/workflows/build-image-arm64.yml](.github/workflows/
 - Docker Hub account (only if you plan to push images)
 
 ## Build via GitHub Actions (push to Docker Hub)
-This workflow builds an ARM64 image from [.devcontainer/Dockerfile.raspi4b](.devcontainer/Dockerfile.raspi4b) and pushes it to your Docker Hub namespace with a timestamp tag.
+This workflow builds an ARM64 image from [.devcontainer/Dockerfile.raspi](.devcontainer/Dockerfile.raspi) and pushes it to your Docker Hub namespace with a timestamp tag.
 
 1) Create repository secrets (Settings → Secrets and variables → Actions):
    - `DOCKERHUB_USERNAME`: Your Docker Hub username
@@ -22,46 +22,20 @@ This workflow builds an ARM64 image from [.devcontainer/Dockerfile.raspi4b](.dev
    - GitHub → Actions → “Build ARM64 Docker Image” → Run workflow
 
 3) Image name and tag:
-   - `${DOCKERHUB_USERNAME}/my-jazzy-desktop-image:YYYYMMDD-HHMMSS`
+   - See the `tags:` field in [.github/workflows/build-image-arm64.yml](.github/workflows/build-image-arm64.yml)
 
 Caching is enabled via GitHub Actions cache to speed up subsequent runs.
 
-
-## Run the image
-On an ARM64 device (e.g., Raspberry Pi 4 running 64-bit OS):
-
-```bash
-# Pull from Docker Hub (if pushed)
-docker pull <dockerhub-username>/my-jazzy-desktop-image:<tag>
-
-# Start an interactive shell
-# (Add flags like --privileged or volume mounts as needed for your use case)
-docker run --rm -it <dockerhub-username>/my-jazzy-desktop-image:<tag> bash
-```
-
-On x86_64 (developer machine), you can run the arm64 image with emulation (may be slow):
+## Running rc_driver on Raspberry Pi
+First, pull the built image on the Raspberry Pi:
 
 ```bash
-docker run --rm -it <dockerhub-username>/my-jazzy-desktop-image:<tag> bash
+docker pull DOCKERHUB_USERNAME/<image-name>:<tag>
 ```
 
-## Tagging tips
-To also publish a convenient `latest` tag alongside the timestamped tag using GitHub Actions, update the `tags:` in [.github/workflows/build-image-arm64.yml](.github/workflows/build-image-arm64.yml):
+Then use [docker_script/docker-run-for-raspi.sh](docker_script/docker-run-for-raspi.sh) to launch the container. It starts the container with `--network host`, which shares the loopback interface with the Raspberry Pi host. This lets `rc_driver` connect to a `pigpiod` daemon running on the host via `pigpiod_host=localhost` (the default in [rc_driver.launch.py](ros2_ws/src/rc_driver/launch/rc_driver.launch.py)).
 
-```yaml
-         - name: Build and push ARM64 image
-            uses: docker/build-push-action@v6
-            with:
-               context: .
-               file: .devcontainer/Dockerfile.raspi4b
-               platforms: linux/arm64
-               push: true
-               tags: |
-                  ${{ secrets.DOCKERHUB_USERNAME }}/my-jazzy-desktop-image:${{ steps.datetime.outputs.tag }}
-                  ${{ secrets.DOCKERHUB_USERNAME }}/my-jazzy-desktop-image:latest
-               cache-from: type=gha
-               cache-to: type=gha,mode=max
-```
+`pigpiod` itself must be started separately on the Raspberry Pi host (outside the container). If the container is run without `--network host`, `pigpiod_host` must be set to the host's IP address instead.
 
 ## Troubleshooting
 - exec format error: The container image architecture doesn’t match the host. Ensure `--platform linux/arm64` was used during build, and that you run on an arm64 host (or with emulation).
@@ -70,4 +44,4 @@ To also publish a convenient `latest` tag alongside the timestamped tag using Gi
 
 ## References
 - Workflow: [.github/workflows/build-image-arm64.yml](.github/workflows/build-image-arm64.yml)
-- Dockerfile (ARM64): [.devcontainer/Dockerfile.raspi4b](.devcontainer/Dockerfile.raspi4b)
+- Dockerfile (ARM64): [.devcontainer/Dockerfile.raspi](.devcontainer/Dockerfile.raspi)
