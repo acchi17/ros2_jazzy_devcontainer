@@ -35,15 +35,11 @@ ENV LC_ALL en_US.UTF-8
 # "|| true" is added to prevent build failure if already initialized or in CI environments
 RUN rosdep init || true
 
-# Add user & grant sudo privileges
-ARG USERNAME=vscode
-ARG USER_UID=7777
-ARG USER_GID=7777
-ARG USER_PASSWORD=vscode
-RUN groupadd --gid $USER_GID $USERNAME \
-    && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    && echo "$USERNAME:$USER_PASSWORD" | chpasswd \
-    && usermod -aG sudo $USERNAME \
+# The base image already provides a non-root "ubuntu" user (uid/gid 1000), which matches
+# the default first-user uid on Ubuntu/Raspberry Pi OS hosts. Reuse it instead of creating
+# a separate user, and grant it sudo privileges.
+ARG USERNAME=ubuntu
+RUN usermod -aG sudo $USERNAME \
     && echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Create and set up ROS2 workspace
