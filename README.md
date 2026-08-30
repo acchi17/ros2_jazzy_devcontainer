@@ -27,13 +27,30 @@ This workflow builds an ARM64 image from [.devcontainer/Dockerfile.raspi](.devco
 Caching is enabled via GitHub Actions cache to speed up subsequent runs.
 
 ## Running rc_driver on Raspberry Pi
+If Docker is not yet installed on the Raspberry Pi, install it first:
+
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+```
+
+Log out and back in (or reboot) for the group membership change to take effect.
+
 First, pull the built image on the Raspberry Pi:
 
 ```bash
 docker pull DOCKERHUB_USERNAME/<image-name>:<tag>
 ```
 
-Then use [docker_script/docker-run-for-raspi.sh](docker_script/docker-run-for-raspi.sh) to launch the container. It starts the container with `--network host`, which shares the loopback interface with the Raspberry Pi host. This lets `rc_driver` connect to a `pigpiod` daemon running on the host via `pigpiod_host=localhost` (the default in [rc_driver.launch.py](ros2_ws/src/rc_driver/launch/rc_driver.launch.py)).
+Then use [docker_script/docker-run-for-raspi.sh](docker_script/docker-run-for-raspi.sh) to launch the container. The script mounts the parent directory of wherever it is invoked from, so run it from inside `docker_script/` (this mounts the repository root, which contains `ros2_ws`, to `/home/vscode/work`):
+
+```bash
+cd docker_script
+./docker-run-for-raspi.sh
+```
+
+It starts the container with `--network host`, which shares the loopback interface with the Raspberry Pi host. This lets `rc_driver` connect to a `pigpiod` daemon running on the host via `pigpiod_host=localhost` (the default in [rc_driver.launch.py](ros2_ws/src/rc_driver/launch/rc_driver.launch.py)).
 
 `pigpiod` itself must be started separately on the Raspberry Pi host (outside the container). If the container is run without `--network host`, `pigpiod_host` must be set to the host's IP address instead.
 
