@@ -11,6 +11,14 @@
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
+	// Share the WSL2 VM's network namespace so ROS2 DDS discovery can reach
+	// devices on the LAN (e.g. a Raspberry Pi). Requires Docker Desktop's
+	// "host networking" feature and WSL2 mirrored networking mode.
+	// See doc/network/pc_raspi_ros2_networking.md
+	"runArgs": ["--network=host"],
+	"containerEnv": {
+		"ROS_DOMAIN_ID": "30"
+	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
