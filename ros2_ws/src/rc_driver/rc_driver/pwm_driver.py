@@ -1,20 +1,18 @@
+from gpiozero import Servo
+
+
 class PwmDriver:
-    def __init__(self, gpio_pin, use_mock_gpio=False, pigpiod_host='localhost', pigpiod_port=8888):
-        self.gpio_pin = gpio_pin
+    def __init__(self, gpio_pin, use_mock_gpio=False):
+        pin_factory = None
         if use_mock_gpio:
-            from rc_driver.mock_pigpio import MockPigpio
-            self.pi = MockPigpio()
-            self.pi.set_mode(self.gpio_pin, MockPigpio.OUTPUT)
-        else:
-            import pigpio  # type: ignore
-            self.pi = pigpio.pi(pigpiod_host, pigpiod_port)
-            self.pi.set_mode(self.gpio_pin, pigpio.OUTPUT)
+            from gpiozero.pins.mock import MockFactory, MockPWMPin
+            pin_factory = MockFactory(pin_class=MockPWMPin)
+        self.servo = Servo(gpio_pin, pin_factory=pin_factory)
 
     def set_value(self, value):
         # value: -1.0〜+1.0
-        pulse = 1500 + value * 500
-        self.pi.set_servo_pulsewidth(self.gpio_pin, pulse)
+        self.servo.value = value
 
     def stop(self):
-        self.pi.set_servo_pulsewidth(self.gpio_pin, 0)
-        self.pi.stop()
+        self.servo.value = None
+        self.servo.close()
