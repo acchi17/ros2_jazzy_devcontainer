@@ -11,9 +11,11 @@ LAUNCH_CMD='source /opt/ros/jazzy/setup.bash && cd ~/work/ros2_ws && colcon buil
 
 docker run -it --rm \
   --network host \
+  --device=/dev/gpiochip0 \
+  --group-add "$(getent group gpio | cut -d: -f3)" \
   -e ROS_DOMAIN_ID=30 \
-  --user vscode \
-  -v "$PARENT_DIR":/home/vscode/work \
-  -w /home/vscode/work \
+  --user ubuntu \
+  -v "$PARENT_DIR":/home/ubuntu/work \
+  -w /home/ubuntu/work \
   "$IMAGE_NAME" \
   bash -c "$LAUNCH_CMD"

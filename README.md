@@ -50,9 +50,7 @@ cd docker_script
 ./docker-run-for-raspi.sh
 ```
 
-It starts the container with `--network host`, which shares the loopback interface with the Raspberry Pi host. This lets `rc_driver` connect to a `pigpiod` daemon running on the host via `pigpiod_host=localhost` (the default in [rc_driver.launch.py](ros2_ws/src/rc_driver/launch/rc_driver.launch.py)).
-
-`pigpiod` itself must be started separately on the Raspberry Pi host (outside the container). If the container is run without `--network host`, `pigpiod_host` must be set to the host's IP address instead.
+It starts the container with `--network host` (needed for ROS2 DDS discovery) and `--device=/dev/gpiochip0` plus `--group-add` for the host's `gpio` group, which together let `rc_driver` drive the Raspberry Pi's GPIO pins directly via `gpiozero` from inside the container.
 
 ## Troubleshooting
 - exec format error: The container image architecture doesn’t match the host. Ensure `--platform linux/arm64` was used during build, and that you run on an arm64 host (or with emulation).

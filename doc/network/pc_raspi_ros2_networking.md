@@ -9,8 +9,6 @@ ROS2のデフォルトDDS実装(Fast DDS)は、ノード同士の発見(ディ�
 - 両方のコンテナが同一のLANセグメントに直接参加している(NATを挟まない)
 - 両方の `ROS_DOMAIN_ID` が一致している
 
-もともとラズパイ側の `docker_script/docker-run-for-raspi.sh` は `--network host` を使っていたが、これは同じホスト上の `pigpiod` デーモンにコンテナから到達するためのものであり、PCとの通信を意図した設定ではなかった。またPC側の `.devcontainer/devcontainer.json` には元々ネットワーク指定が一切なく、Dockerのデフォルト(bridgeネットワーク、NAT配下)で起動していた。
-
 ## PC側(Windows + Docker Desktop + WSL2)の前提設定
 
 PCはWindows上のDocker Desktop(WSL2バックエンド)で動作している。WSL2はデフォルトで「NATモード」であり、WSL2 VM自体がPC内部の仮想スイッチ(`vEthernet (WSL)`)の背後にいる。この状態では、コンテナ側で `--network=host` を指定してWSL2 VMとネットワーク名前空間を共有しても、ラズパイから見ればまだNATの奥にいるままで到達できない。
