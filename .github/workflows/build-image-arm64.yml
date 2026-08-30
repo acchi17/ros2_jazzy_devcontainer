@@ -34,6 +34,9 @@ jobs:
           file: .devcontainer/Dockerfile.raspi
           platforms: linux/arm64
           push: true
+          build-args: |
+            USER_UID=1000
+            USER_GID=1000
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/ros2-jazzy-image-for-raspi:${{ steps.datetime.outputs.tag }}
             ${{ secrets.DOCKERHUB_USERNAME }}/ros2-jazzy-image-for-raspi:latest
