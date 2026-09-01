@@ -7,13 +7,13 @@
 ```mermaid
 graph TB
     subgraph Sub1 [Windows]
-        A[VSCode] --> B[Ext. WSL]
-        A --> C[Ext. Dev Containers]
+        A[VSCode] --> C[Ext. Dev Containers]
         D["RDPクライアント(GUI表示)"]
+        E[Docker Desktop]
     end
     
     subgraph Sub2 [WSL2]
-        subgraph Sub21 ["Linux OS(Ubuntu等)"]
+        subgraph Sub23 ["Docker Desktop専用ディストロ(自動作成)"]
             F[Dockerエンジン] -- 構築/実行 --> G[ROS2 devcontainer]
         end
         
@@ -23,8 +23,8 @@ graph TB
         end
     end
     
-    B -- 接続 --> Sub21
-    C -- 接続 --> G
+    C -- 接続 --> E
+    E -- "WSL2バックエンドとして提供" --> F
     
     subgraph Sub3 [Dockerコンテナ内部]
         H[ROS2/Gazebo] -- "GUIデータ" --> X
@@ -38,23 +38,22 @@ graph TB
 ## 説明
 
 1. **Windows**:
-   - VSCodeはエディタとして機能し、拡張機能を通じてWSLやコンテナに接続します。
-   - 図中の「Ext. WSL」は、VSCodeの「WSL」（Microsoft提供）という名称の拡張機能です。以前は「Remote - WSL」という名称でしたが名称が簡略化されました。この拡張機能はVSCodeからWSL環境に直接接続し、WSL内のファイルをネイティブに編集・実行できるようにします。
+   - VSCodeはエディタとして機能し、拡張機能を通じてコンテナに接続します。
    - 図中の「Ext. Dev Containers」は、VSCodeの「Dev Containers」（Microsoft提供）という名称の拡張機能です。以前は「Remote - Containers」という名称でしたが名称が変更されました。この拡張機能はVSCodeからDockerコンテナに直接接続し、devcontainer設定に基づいたコンテナ環境を構築・利用できるようにします。
-   - 「WSL」拡張機能と「Dev Containers」拡張機能は別々の独立した拡張機能であり、一方が他方に含まれているわけではありません。それぞれが異なる目的（WSL接続とコンテナ接続）を持っています。
    - RDPクライアントはWindows標準のリモートデスクトッププロトコル技術を利用し、WSLg経由でDockerコンテナ内部のGUIアプリケーションをWindowsデスクトップ上に表示します。
+   - **Docker Desktop**はWindows上で常駐するアプリケーションで、Dockerを利用するために起動している必要があります。VSCodeの「Ext. Dev Containers」拡張は、Windows側の名前付きパイプ経由でDocker Desktopに直接接続し、devcontainer設定に基づいたコンテナのビルド・起動・管理を行います。この経路はユーザーが別途セットアップするWSLディストロ（Ubuntu等）を経由しません。
+   - 既定の「WSL2 based engine」設定では、実際のDockerエンジン（dockerd）はDocker Desktopインストール時に自動作成される専用の隠しWSL2ディストリビューション（`docker-desktop`、`docker-desktop-data`）内で動作しています。ROS2 devcontainerもこのディストロ内で動きます。
 
 2. **WSL2**:
    - WSL2はWindows上でLinuxカーネルを実行するための技術的な基盤です。
-   - 図中の「Linux OS(Ubuntu等)」は、WSL2上で実行される特定のLinuxディストリビューションのインスタンスを指します。
+   - 図中の「Docker Desktop専用ディストロ」は、Docker Desktopのインストール時に自動的に作成される隠しディストロ（`docker-desktop`、`docker-desktop-data`）です。ユーザーが意識的にセットアップする必要はなく、Dockerエンジン（dockerd）とコンテナはこの中で動作します。
    - 図中の「ROS2 devcontainer」は、`.devcontainer/Dockerfile`で定義されたDockerコンテナを指します。このコンテナには以下が含まれています。
      - ROS2 Iron（ベースイメージ）
      - Gazeboシミュレーター
      - 開発ツール（コンパイラ、デバッガなど）
      - ROS2ワークスペース（/home/vscode/ros2_projects）
      また、`.devcontainer/devcontainer.json`によって、VSCodeとの統合、ボリュームマウント、X11転送などが設定されています。
-   - Linux OS内でDockerエンジンが動作し、Dockerコンテナを管理します。
-   - DockerエンジンがROS2 devcontainerを構築・実行します。
+   - Docker Desktop専用ディストロ内でDockerエンジンが動作し、ROS2 devcontainerを構築・実行します。
    - この階層構造により、Windows上でLinuxアプリケーションを効率的に実行できます。
 
 3. **Dockerコンテナ内部**:
