@@ -9,6 +9,7 @@ RUN apt-get update && \
     cmake \
     gdb \
     git \
+    iproute2 \
     locales \
     python3-colcon-common-extensions \
     python3-flake8 \

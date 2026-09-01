@@ -47,6 +47,7 @@ Then use [docker_script/docker-run-for-raspi.sh](docker_script/docker-run-for-ra
 
 ```bash
 cd docker_script
+chmod +x docker-run-for-raspi.sh
 ./docker-run-for-raspi.sh
 ```
 
