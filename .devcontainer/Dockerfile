@@ -32,6 +32,8 @@ RUN apt-get update && \
     # Visualization and manipulation tools
     ros-jazzy-rviz2 \
     ros-jazzy-teleop-twist-keyboard \
+    # Zenoh RMW implementation (for communication across NAT)
+    ros-jazzy-rmw-zenoh-cpp \
     # Remove apt lists to keep image slim and ensure fresh indexes
     && rm -rf /var/lib/apt/lists/*
 

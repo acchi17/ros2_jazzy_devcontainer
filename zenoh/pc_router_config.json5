@@ -1,0 +1,10 @@
+{
+  // Connect out to the Raspberry Pi's Zenoh router. This is an outbound
+  // connection, so it works even though the PC devcontainer sits behind
+  // WSL2/Docker Desktop's NAT.
+  // Replace <raspi-ip> with the Raspberry Pi's actual LAN IP (a static
+  // IP or hostname is recommended so this doesn't need updating).
+  connect: {
+    endpoints: ["tcp/<raspi-ip>:7447"],
+  },
+}

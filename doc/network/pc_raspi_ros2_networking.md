@@ -4,60 +4,37 @@ PC(`.devcontainer/Dockerfile`環境)で動かすノードが配信する `/cmd_v
 
 ## なぜ追加設定が必要か
 
-ROS2のデフォルトDDS実装(Fast DDS)は、ノード同士の発見(ディスカバリ)にUDPマルチキャストを使う。マルチキャストはNAT(ネットワークアドレス変換)を越えられないため、以下のいずれかの条件が満たされていないとPC側とラズパイ側のノードは互いを発見できない。
+ROS2のデフォルトDDS実装(Fast DDS)は、ノード同士の発見(ディスカバリ)にUDPマルチキャストを使う。マルチキャストはNAT(ネットワークアドレス変換)を越えられない。
 
-- 両方のコンテナが同一のLANセグメントに直接参加している(NATを挟まない)
-- 両方の `ROS_DOMAIN_ID` が一致している
+PCはWindows上のDocker Desktop(WSL2バックエンド)で動作しており、WSL2はデフォルトで「NATモード」であるため、コンテナ側で `--network=host` を指定してWSL2 VMとネットワーク名前空間を共有しても、ラズパイから見ればPC側はまだNATの奥にいる。ラズパイ側から見てPC側への**インバウンド**到達性を作るには、WSL2のミラーモードやポートフォワードなど追加のWindows側設定が必要になる。
 
-## PC側(Windows + Docker Desktop + WSL2)の前提設定
+## 採用方式: Zenoh(rmw_zenoh)によるルーター間接続
 
-PCはWindows上のDocker Desktop(WSL2バックエンド)で動作している。WSL2はデフォルトで「NATモード」であり、WSL2 VM自体がPC内部の仮想スイッチ(`vEthernet (WSL)`)の背後にいる。この状態では、コンテナ側で `--network=host` を指定してWSL2 VMとネットワーク名前空間を共有しても、ラズパイから見ればまだNATの奥にいるままで到達できない。
+`rmw_zenoh_cpp` に切り替え、**ルーター同士を接続する**構成にすることで、上記のインバウンド到達性の問題を回避する。
 
-そのため、次の2つを両方とも行う必要がある。
+- PC側・ラズパイ側それぞれで `rmw_zenohd`(Zenohルーター)をローカルに常駐させる。**ROS2ノード側のZenohセッションはデフォルト設定のままでよい**(ノードは自動的に同一ホスト上のローカルルーターを見つけて使う)。
+- **ラズパイ側のルーター**(`zenoh/raspi_router_config.json5`)はデフォルト同然の設定で、全インターフェースの `tcp/0.0.0.0:7447` で待ち受けるだけ。ラズパイはコンテナが `--network host` で動いており、かつNATされていない通常のLANメンバーなので、これだけで外部から到達可能になる。
+- **PC側のルーター**(`zenoh/pc_router_config.json5`)は、`connect.endpoints` にラズパイの `tcp/<raspi-ip>:7447` を指定し、そこへ**アウトバウンドで接続**する。
 
-1. **WSL2をミラーモードにする**(Windows 11 22H2以降で利用可能)
-   `%UserProfile%\.wslconfig` に以下を追記し、PowerShellで `wsl --shutdown` を実行して再起動する。
-   ```ini
-   [wsl2]
-   networkingMode=mirrored
-   ```
-   ミラーモードにすると、WSL2 VMはPCの実ネットワークインターフェースをそのまま共有し、PCと同じLAN上のIPアドレスを持つようになる。
+接続の起点をPC側からラズパイ側への一方向(アウトバウンド)に固定しているのがポイント。
 
-2. **Docker DesktopのHost networking機能を有効化する**
-   Docker Desktop → Settings → Resources → Network → “Enable host networking” をオンにする。これにより `--network=host` を指定したコンテナが、WSL2 VMのネットワーク名前空間(ミラーモードによりPCのLANと同一)をそのまま利用できるようになる。
+- **アウトバウンド接続**(内側から外へ接続を開始する)は、NAT装置が自動的にコネクション状態を記録して戻りのパケットを通す(NATマスカレード/SNAT)ため、事前設定なしに機能する。ブラウザがルーターの内側からWebサイトへアクセスできるのと同じ仕組み。
+- 一方、**ポートフォワード**(外部からNATの内側へ接続を開始できるようにする静的な転送設定)は、逆方向(ラズパイ→PC)の到達性が必要な場合にのみ要る。今回はこの方向の通信を避ける設計にしているため、ポートフォワードもWSL2ミラーモードも不要になる。
 
-3. **Windowsファイアウォールの許可**
-   プライベートネットワークプロファイル上で、ROS2 DDSが使うUDP通信(マルチキャスト含む)を許可する。動作確認時に届かない場合は、まずファイアウォールを一時的に無効化するか、該当ポートの許可ルールを作成して切り分けること。
+必要なのはラズパイ側OSのファイアウォールでTCP 7447のインバウンドを許可しておくことだけ(PC・WSL2側の追加設定は不要)。
 
-`.devcontainer/devcontainer.json` にはこれに対応する `runArgs: ["--network=host"]` を設定済み(要Docker Desktop再起動・Dev Container再ビルド)。
+### 設定箇所
 
-## `ROS_DOMAIN_ID` を揃える
-
-同じLAN上に複数のROS2システムが存在する場合の混信を避けるため、PC側・ラズパイ側で同じ `ROS_DOMAIN_ID` を明示的に設定している。
-
-- PC側: `.devcontainer/devcontainer.json` の `containerEnv.ROS_DOMAIN_ID`
-- ラズパイ側: `docker_script/docker-run-for-raspi.sh` の `-e ROS_DOMAIN_ID=30`
-
-両方とも `30` に固定してある。値自体に意味はなく、両側で一致していることが重要。
-
-## RMW実装について
-
-ROS2 Jazzyのデフォルト実装(`rmw_fastrtps_cpp`)を両側とも変更せずに使う想定。明示的な設定は不要。
-
-## ミラーモードが使えない場合(フォールバック)
-
-Windows 10など、WSL2のミラーモードが利用できない環境では、マルチキャストディスカバリに頼らない構成が必要になる。
-
-- RMW実装をCycloneDDS(`rmw_cyclonedds_cpp`)に切り替え、`CYCLONEDDS_URI` で相手のIPアドレスを静的ピアとして指定する
-- WSL2 NAT配下のPCへラズパイから到達できるよう、Windows側で `netsh interface portproxy` を使い該当ポートをWSL2 VMのIPへ転送する
-
-この構成は追加の設定項目が多く複雑になるため、可能な限りミラーモードの利用を推奨する。
+- Dockerfile: [`.devcontainer/Dockerfile`](../../.devcontainer/Dockerfile) と [`.devcontainer/Dockerfile.raspi`](../../.devcontainer/Dockerfile.raspi) に `ros-jazzy-rmw-zenoh-cpp` を追加。
+- PC側: [`devcontainer.json`](../../.devcontainer/devcontainer.json) で `RMW_IMPLEMENTATION=rmw_zenoh_cpp` と `ZENOH_ROUTER_CONFIG_URI` を設定し、`postStartCommand` でコンテナ起動時に `rmw_zenohd` をバックグラウンド起動する。ルーター設定は [`zenoh/pc_router_config.json5`](../../zenoh/pc_router_config.json5)(`<raspi-ip>` は実際のラズパイのLAN IPに置き換える)。
+- ラズパイ側: [`docker_script/docker-run-for-raspi.sh`](../../docker_script/docker-run-for-raspi.sh) で同様に環境変数を設定し、`rmw_zenohd` をバックグラウンドで起動する。ルーター設定は [`zenoh/raspi_router_config.json5`](../../zenoh/raspi_router_config.json5)。
+- `ROS_DOMAIN_ID` は両側とも `30` のまま維持(Zenoh移行後も踏襲)。
 
 ## 動作確認手順
 
-1. PC側: `.devcontainer/devcontainer.json` 変更後、Dev Containerを再ビルドして起動する。
-2. ラズパイ側: 変更後の `docker_script/docker-run-for-raspi.sh` でコンテナを起動する(`rc_driver` は既存の起動コマンドのまま自動起動する)。
-3. PC側で以下を実行してテスト用のメッセージを配信する。
+1. 前提確認: PC側devcontainer内から `curl <raspi-ip>` や `nc -vz <raspi-ip> <ポート>` でラズパイへのアウトバウンド疎通を確認する。
+2. ラズパイ側: `docker-run-for-raspi.sh` でコンテナを起動し、`ss -tlnp | grep 7447` などでルーターが待受していることを確認する。
+3. PC側: devcontainerを再ビルド・起動し、以下でテスト用のメッセージを配信する。
    ```bash
    ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}}"
    ```
@@ -65,7 +42,17 @@ Windows 10など、WSL2のミラーモードが利用できない環境では、
    ```bash
    ros2 topic echo /cmd_vel
    ```
-5. 届かない場合は以下で切り分ける。
-   - `ros2 topic list` を両側で実行し、`/cmd_vel` が相手側からも見えているか
-   - `ros2 multicast receive` / `ros2 multicast send` でマルチキャスト疎通そのものを確認
-   - Windowsファイアウォールのログでブロックされていないか確認
+5. 逆方向(ラズパイ→PC)のトピックも同様に確認する。
+6. 届かない場合の切り分け:
+   - `ros2 topic list` を両側で実行し、相手側のトピックが見えているか
+   - PC側の `rmw_zenohd` ログ(`/tmp/rmw_zenohd.log`)でラズパイ側ルーターへの接続が確立しているか
+   - ラズパイ側ファイアウォールでTCP 7447がブロックされていないか
+
+## 参考: 以前検討していたフォールバック案(未採用)
+
+Zenohに切り替える前に検討していた、デフォルトDDS(Fast DDSまたはCycloneDDS)のままNATを越える案。マルチキャストに頼らない構成が必要になり、以下のいずれかが必要だった。
+
+- WSL2を「ミラーモード」にする(`%UserProfile%\.wslconfig` に `networkingMode=mirrored` を設定し、Windows 11 22H2以降が必要)+ Docker Desktopの「Enable host networking」を有効化する
+- RMW実装をCycloneDDS(`rmw_cyclonedds_cpp`)に切り替え、`CYCLONEDDS_URI` で相手のIPアドレスを静的ピアとして指定 + `netsh interface portproxy` でWSL2 VMへポート転送する
+
+いずれもラズパイ→PCへの**インバウンド**到達性を作り込む必要があり、Windows側の追加設定に依存するため、より単純に実現できるZenohのルーター間接続方式を採用した。
