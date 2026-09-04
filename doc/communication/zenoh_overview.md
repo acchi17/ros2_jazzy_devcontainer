@@ -75,19 +75,21 @@ zenoh（Rust実装本体）
 
 ### rmw_zenohでのモード設定方法
 
-modeはROS 2ノードごとではなく、**そのノードを実行するプロセスに対する環境変数**(=Zenohセッション単位の設定)として与える。設定は主に3つの環境変数で行う。
+基本的にデフォルトのjson5設定ファイル自体がpeer用・router用に用意されているため、peer/routerへの切り替えに設定ファイルの書き換えは不要。clientだけは明示的な指定が要る。
 
-| 環境変数 | 対象 | 役割 |
-|---|---|---|
-| `ZENOH_SESSION_CONFIG_URI` | ROS 2ノード側のセッション | 設定ファイル(json5)一式を丸ごと差し替える。未指定時はデフォルトの`DEFAULT_RMW_ZENOH_SESSION_CONFIG.json5`(`mode="peer"`)が使われる |
-| `ZENOH_ROUTER_CONFIG_URI` | `rmw_zenohd`(ルーター) | ルーター用の設定ファイルを丸ごと差し替える。未指定時はデフォルトの`DEFAULT_RMW_ZENOH_ROUTER_CONFIG.json5`(`mode="router"`)が使われる |
-| `ZENOH_CONFIG_OVERRIDE` | 上記いずれか | 設定ファイルの特定フィールドだけを`key/path=value;key2/path2=value2`形式でインライン上書きする(ファイル全体を用意しなくてよい) |
+| モード | 切り替え方法 |
+|---|---|
+| **peer**(デフォルト) | ROS2ノードのプロセスはデフォルトでこのモードになる(デフォルトのセッション設定ファイル:`share/rmw_zenoh_cpp/config/DEFAULT_RMW_ZENOH_SESSION_CONFIG.json5`が`peer`の設定になっているため)。ルーターが別ホストにある場合のみ、同ファイルの`connect/endpoints`を`["tcp/<ルーターのIP>:7447"]`に書き換える |
+| **router** | `rmw_zenohd`というROS2ノード(`ros2 run rmw_zenoh_cpp rmw_zenohd`で起動)のプロセス専用モード。他のROS2ノードのプロセスをrouterモードにすることは基本的にない。このモード用の設定ファイルはルータ設定ファイルと呼ばれる(デフォルトのルータ設定ファイル:`share/rmw_zenoh_cpp/config/DEFAULT_RMW_ZENOH_ROUTER_CONFIG.json5`) |
+| **client** | ROS2ノードを起動するプロセスに`ZENOH_CONFIG_OVERRIDE`環境変数を設定してから起動する。デフォルトのセッション設定ファイルは書き換えず、環境変数でそのプロセスだけ設定を上書きするのが推奨される(下記参照) |
 
-例: あるプロセスだけをclientモードで動かしたい場合は、そのプロセスを起動する前に以下を設定する。
+client例:
 
 ```bash
-export ZENOH_CONFIG_OVERRIDE='mode="client";connect/endpoints=["tcp/<ルーターのIP>:7447"]'
+ZENOH_CONFIG_OVERRIDE='mode="client";connect/endpoints=["tcp/<ルーターのIP>:7447"]' ros2 run demo_nodes_cpp listener
 ```
+
+補足: 恒久的に設定を変えたい場合は、デフォルトのセッション/ルータ設定ファイルをコピーして設定を書き換え、`ZENOH_SESSION_CONFIG_URI`(セッション設定ファイル用)や`ZENOH_ROUTER_CONFIG_URI`(ルーター設定ファイル用)という環境変数でそのファイルパスを指定する方法もある。
 
 ### rmw_zenohでのモードの使い分け
 
