@@ -1,0 +1,8 @@
+{
+  // Listen on all interfaces so the PC-side router can connect in over the
+  // LAN. The Raspberry Pi is not behind NAT (container runs with
+  // --network host), so no other setup is needed on this side.
+  listen: {
+    endpoints: ["tcp/0.0.0.0:7447"],
+  },
+}

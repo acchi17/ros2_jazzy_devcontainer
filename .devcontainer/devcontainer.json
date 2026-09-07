@@ -11,13 +11,13 @@
 	"build": {
 		"dockerfile": "Dockerfile"
 	},
-	// Share the WSL2 VM's network namespace so ROS2 DDS discovery can reach
-	// devices on the LAN (e.g. a Raspberry Pi). Requires Docker Desktop's
-	// "host networking" feature and WSL2 mirrored networking mode.
-	// See doc/network/pc_raspi_ros2_networking.md
-	"runArgs": ["--network=host"],
 	"containerEnv": {
-		"ROS_DOMAIN_ID": "30"
+		"ROS_DOMAIN_ID": "30",
+		// Use Zenoh instead of the default Fast DDS
+		// so communication works across the WSL2/Docker Desktop NAT boundary
+		// without needing WSL2 mirrored networking mode.
+		"RMW_IMPLEMENTATION": "rmw_zenoh_cpp",
+		"ZENOH_ROUTER_CONFIG_URI": "/home/vscode/ros2_projects/zenoh/pc_router_config.json5"
 	},
 	"customizations": {
 		"vscode": {
@@ -34,5 +34,9 @@
 			}
 		}
 	},
-	"postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/ros2_projects && mkdir -p /home/vscode/ros2_projects/ros2_ws/src"
+	"postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/ros2_projects && mkdir -p /home/vscode/ros2_projects/ros2_ws/src",
+	// Keep a local Zenoh router running so ROS2 nodes in this container can
+	// reach it by default; the router itself connects out to the Raspberry
+	// Pi's router (see zenoh/pc_router_config.json5).
+	"postStartCommand": "bash -c 'source /opt/ros/jazzy/setup.bash && nohup ros2 run rmw_zenoh_cpp rmw_zenohd > /tmp/rmw_zenohd.log 2>&1 & disown'"
 }

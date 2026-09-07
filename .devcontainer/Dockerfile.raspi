@@ -23,6 +23,8 @@ RUN apt-get update && \
     sudo \
     vim \
     wget \
+    # Zenoh RMW implementation (for communication across NAT)
+    ros-jazzy-rmw-zenoh-cpp \
     # Remove apt lists to keep image slim and ensure fresh indexes
     && rm -rf /var/lib/apt/lists/*
 
