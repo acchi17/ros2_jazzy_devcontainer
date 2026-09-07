@@ -12,7 +12,8 @@ PCはWindows上のDocker Desktop(WSL2バックエンド)で動作しており、
 
 `rmw_zenoh_cpp` に切り替え、**ルーター同士を接続する**構成にすることで、上記のインバウンド到達性の問題を回避する。
 
-- PC側・ラズパイ側それぞれで `rmw_zenohd`(Zenohルーター)をローカルに常駐させる。**ROS2ノード側のZenohセッションはデフォルト設定のままでよい**(ノードは自動的に同一ホスト上のローカルルーターを見つけて使う)。
+- PC側・ラズパイ側それぞれで `rmw_zenohd`(Zenohルーター)をローカルに常駐させる。
+- **ラズパイ側のROS2ノード(`rc_driver_node`)のZenohセッション**は、デフォルト設定(peerモード)のマルチキャストscoutingによるルーター発見がWi-Fi環境では不安定なため、`zenoh/raspi_session_config.json5` で明示的に `mode: "client"` ・ `connect.endpoints: ["tcp/127.0.0.1:7447"]` を指定し、ローカルルーターへ直接接続する構成にしている。
 - **ラズパイ側のルーター**(`zenoh/raspi_router_config.json5`)はデフォルト同然の設定で、全インターフェースの `tcp/0.0.0.0:7447` で待ち受けるだけ。ラズパイはコンテナが `--network host` で動いており、かつNATされていない通常のLANメンバーなので、これだけで外部から到達可能になる。
 - **PC側のルーター**(`zenoh/pc_router_config.json5`)は、`connect.endpoints` にラズパイの `tcp/<raspi-ip>:7447` を指定し、そこへ**アウトバウンドで接続**する。
 
@@ -27,7 +28,7 @@ PCはWindows上のDocker Desktop(WSL2バックエンド)で動作しており、
 
 - Dockerfile: [`.devcontainer/Dockerfile`](../../.devcontainer/Dockerfile) と [`.devcontainer/Dockerfile.raspi`](../../.devcontainer/Dockerfile.raspi) に `ros-jazzy-rmw-zenoh-cpp` を追加。
 - PC側: [`devcontainer.json`](../../.devcontainer/devcontainer.json) で `RMW_IMPLEMENTATION=rmw_zenoh_cpp` と `ZENOH_ROUTER_CONFIG_URI` を設定し、`postStartCommand` でコンテナ起動時に `rmw_zenohd` をバックグラウンド起動する。ルーター設定は [`zenoh/pc_router_config.json5`](../../zenoh/pc_router_config.json5)(`<raspi-ip>` は実際のラズパイのLAN IPに置き換える)。
-- ラズパイ側: [`docker_script/docker-run-for-raspi.sh`](../../docker_script/docker-run-for-raspi.sh) で同様に環境変数を設定し、`rmw_zenohd` をバックグラウンドで起動する。ルーター設定は [`zenoh/raspi_router_config.json5`](../../zenoh/raspi_router_config.json5)。
+- ラズパイ側: [`docker_script/docker-run-for-raspi.sh`](../../docker_script/docker-run-for-raspi.sh) で同様に環境変数を設定し、`rmw_zenohd` をバックグラウンドで起動する。ルーター設定は [`zenoh/raspi_router_config.json5`](../../zenoh/raspi_router_config.json5)。さらに `ZENOH_SESSION_CONFIG_URI` で [`zenoh/raspi_session_config.json5`](../../zenoh/raspi_session_config.json5) を指定し、`rc_driver_node` がローカルルーターへ直接接続するようにしている。
 - `ROS_DOMAIN_ID` は両側とも `30` のまま維持(Zenoh移行後も踏襲)。
 
 ## 動作確認手順

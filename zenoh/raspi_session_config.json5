@@ -1,0 +1,11 @@
+{
+  // The default (peer) session config discovers the local router via
+  // multicast scouting, which can be unreliable over Wi-Fi (common for a
+  // Raspberry Pi RC car). This container only ever has one node and one
+  // router, so there is no need for peer-to-peer discovery — connect
+  // directly to the local router instead, in client mode.
+  mode: "client",
+  connect: {
+    endpoints: ["tcp/127.0.0.1:7447"],
+  },
+}

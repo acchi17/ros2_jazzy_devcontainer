@@ -19,6 +19,7 @@ docker run -it --rm \
   -e ROS_DOMAIN_ID=30 \
   -e RMW_IMPLEMENTATION=rmw_zenoh_cpp \
   -e ZENOH_ROUTER_CONFIG_URI=/home/ubuntu/work/zenoh/raspi_router_config.json5 \
+  -e ZENOH_SESSION_CONFIG_URI=/home/ubuntu/work/zenoh/raspi_session_config.json5 \
   --user ubuntu \
   -v "$PARENT_DIR":/home/ubuntu/work \
   -w /home/ubuntu/work \
