@@ -8,4 +8,13 @@
   connect: {
     endpoints: ["tcp/127.0.0.1:7447"],
   },
+  // Docker's default /dev/shm (64MB) is too small for Zenoh's default SHM
+  // buffer, which crashes node startup with "OS error 12" (ENOMEM). This
+  // node's traffic (cmd_vel -> PWM) is low-rate and small, so the zero-copy
+  // optimization isn't needed — just disable it.
+  transport: {
+    shared_memory: {
+      enabled: false,
+    },
+  },
 }
