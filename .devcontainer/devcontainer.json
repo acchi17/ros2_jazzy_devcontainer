@@ -17,7 +17,11 @@
 		// so communication works across the WSL2/Docker Desktop NAT boundary
 		// without needing WSL2 mirrored networking mode.
 		"RMW_IMPLEMENTATION": "rmw_zenoh_cpp",
-		"ZENOH_ROUTER_CONFIG_URI": "/home/vscode/ros2_projects/zenoh/pc_router_config.json5"
+		"ZENOH_ROUTER_CONFIG_URI": "/home/vscode/ros2_projects/zenoh/pc_router_config.json5",
+		// Default (peer) session config discovers the local router via
+		// multicast scouting, which doesn't work reliably in this Docker
+		// Desktop/WSL2 network — connect directly to it instead.
+		"ZENOH_SESSION_CONFIG_URI": "/home/vscode/ros2_projects/zenoh/pc_session_config.json5"
 	},
 	"customizations": {
 		"vscode": {
@@ -34,9 +38,5 @@
 			}
 		}
 	},
-	"postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/ros2_projects && mkdir -p /home/vscode/ros2_projects/ros2_ws/src",
-	// Keep a local Zenoh router running so ROS2 nodes in this container can
-	// reach it by default; the router itself connects out to the Raspberry
-	// Pi's router (see zenoh/pc_router_config.json5).
-	"postStartCommand": "bash -c 'source /opt/ros/jazzy/setup.bash && nohup ros2 run rmw_zenoh_cpp rmw_zenohd > /tmp/rmw_zenohd.log 2>&1 & disown'"
+	"postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/ros2_projects && mkdir -p /home/vscode/ros2_projects/ros2_ws/src"
 }

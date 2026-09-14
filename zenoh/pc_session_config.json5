@@ -1,0 +1,20 @@
+{
+  // The default (peer) session config discovers the local router via
+  // multicast scouting, which doesn't work reliably in this Docker
+  // Desktop/WSL2 container network. This container only ever has one node
+  // and one router, so there is no need for peer-to-peer discovery —
+  // connect directly to the local router instead, in client mode.
+  mode: "client",
+  connect: {
+    endpoints: ["tcp/127.0.0.1:7447"],
+  },
+  // Docker's default /dev/shm (64MB) is too small for Zenoh's default SHM
+  // buffer, which can crash node startup with "OS error 12" (ENOMEM). This
+  // container's traffic (cmd_vel) is low-rate and small, so the zero-copy
+  // optimization isn't needed — just disable it.
+  transport: {
+    shared_memory: {
+      enabled: false,
+    },
+  },
+}
