@@ -94,16 +94,16 @@ docker: Error response from daemon: accessing specified distro mount service: st
 This requirement is independent of the ARM64/Raspberry Pi image build described above — it only applies to opening the main ROS 2 devcontainer on a Windows/WSL2 host.
 
 ### Connect to the Raspberry Pi's Zenoh router
-Before opening the devcontainer, set the Raspberry Pi's LAN IP in [zenoh/pc_router_config.json5](zenoh/pc_router_config.json5) (`connect.endpoints`, `tcp/<raspi-ip>:7447`). The local Zenoh router (`rmw_zenohd`, logs at `/tmp/rmw_zenohd.log`) then connects outbound to the Raspberry Pi's router once started (see next section).
+Before opening the devcontainer, set the Raspberry Pi's LAN IP in [zenoh/pc_router_config.json5](zenoh/pc_router_config.json5) (`connect.endpoints`, `tcp/<raspi-ip>:7447`). The local Zenoh router (`rmw_zenohd`) then connects outbound to the Raspberry Pi's router once started (see next section).
 
 ### Start the devcontainer and verify the connection
 1. Make sure the Raspberry Pi side is already running (see section 2 above), so its node is up.
 2. Open this repository in VS Code and "Reopen in Container".
 3. Start the local Zenoh router manually. Automatically starting it via `postStartCommand` turned out to be unreliable in this environment (see [doc/devcontainer/mystery_of_postStartCommand.md](doc/devcontainer/mystery_of_postStartCommand.md) for why), so for now run this once per container session from an integrated terminal:
    ```bash
-   setsid nohup ros2 run rmw_zenoh_cpp rmw_zenohd > /tmp/rmw_zenohd.log 2>&1 < /dev/null &
+   ros2 run rmw_zenoh_cpp rmw_zenohd
    ```
-   `setsid` fully detaches the process so it keeps running after this terminal is closed.
+   Leave this terminal running; open a separate terminal for the next step.
 4. Confirm the Raspberry Pi's node is visible from the PC side:
    ```bash
    ros2 node list
@@ -111,7 +111,7 @@ Before opening the devcontainer, set the Raspberry Pi's LAN IP in [zenoh/pc_rout
    The Raspberry Pi's node should appear in this list, confirming the PC-side router successfully connected to the Raspberry Pi's router over Zenoh.
 
 ### Troubleshooting
-- `ros2 node list` (or `ros2 topic list`) shows nothing from the other side: check the PC-side `rmw_zenohd` log (`/tmp/rmw_zenohd.log`) for a confirmed connection to the Raspberry Pi's router.
+- `ros2 node list` (or `ros2 topic list`) shows nothing from the other side: check the PC-side `rmw_zenohd` terminal output for a confirmed connection to the Raspberry Pi's router.
 - Confirm TCP 7447 isn't blocked by the Raspberry Pi's firewall.
 - Confirm the Raspberry Pi's LAN IP in `zenoh/pc_router_config.json5` is correct and reachable from the PC (e.g. `nc -vz <raspi-ip> 7447` from inside the devcontainer).
 

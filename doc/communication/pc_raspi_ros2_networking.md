@@ -1,6 +1,6 @@
 # PCとラズパイ間でROS2トピックをやり取りするための設定
 
-PC(`.devcontainer/Dockerfile`環境)で動かすノードが配信する `/cmd_vel` などのトピックを、ラズパイ(`.devcontainer/Dockerfile.raspi`環境、`rc_driver`)側のノードが購読できるようにするための設定をまとめる。
+PC(`.devcontainer/Dockerfile`環境)側のノードが配信する `/cmd_vel` などのトピックを、ラズパイ(`.devcontainer/Dockerfile.raspi`環境、`rc_driver`)側のノードが購読できるようにするための設定をまとめる。
 
 ## なぜ追加設定が必要か
 
@@ -27,7 +27,7 @@ PCはWindows上のDocker Desktop(WSL2バックエンド)で動作しており、
 ### 設定箇所
 
 - Dockerfile: [`.devcontainer/Dockerfile`](../../.devcontainer/Dockerfile) と [`.devcontainer/Dockerfile.raspi`](../../.devcontainer/Dockerfile.raspi) に `ros-jazzy-rmw-zenoh-cpp` を追加。
-- PC側: [`devcontainer.json`](../../.devcontainer/devcontainer.json) で `RMW_IMPLEMENTATION=rmw_zenoh_cpp` と `ZENOH_ROUTER_CONFIG_URI` を設定し、`postStartCommand` でコンテナ起動時に `rmw_zenohd` をバックグラウンド起動する。ルーター設定は [`zenoh/pc_router_config.json5`](../../zenoh/pc_router_config.json5)(`<raspi-ip>` は実際のラズパイのLAN IPに置き換える)。
+- PC側: [`devcontainer.json`](../../.devcontainer/devcontainer.json) で `RMW_IMPLEMENTATION=rmw_zenoh_cpp` と `ZENOH_ROUTER_CONFIG_URI` を設定し、ルーター設定は [`zenoh/pc_router_config.json5`](../../zenoh/pc_router_config.json5)(`<raspi-ip>` は実際のラズパイのLAN IPに置き換える)。さらに `ZENOH_SESSION_CONFIG_URI` で [`zenoh/pc_session_config.json5`](../../zenoh/pc_session_config.json5) を指定し、ローカルルーターへ直接接続する構成にしている。
 - ラズパイ側: [`docker_script/docker-run-for-raspi.sh`](../../docker_script/docker-run-for-raspi.sh) で同様に環境変数を設定し、`rmw_zenohd` をバックグラウンドで起動する。ルーター設定は [`zenoh/raspi_router_config.json5`](../../zenoh/raspi_router_config.json5)。さらに `ZENOH_SESSION_CONFIG_URI` で [`zenoh/raspi_session_config.json5`](../../zenoh/raspi_session_config.json5) を指定し、`rc_driver_node` がローカルルーターへ直接接続するようにしている。
 - `ROS_DOMAIN_ID` は両側とも `30` のまま維持(Zenoh移行後も踏襲)。
 
@@ -35,16 +35,20 @@ PCはWindows上のDocker Desktop(WSL2バックエンド)で動作しており、
 
 1. 前提確認: PC側devcontainer内から `curl <raspi-ip>` や `nc -vz <raspi-ip> <ポート>` でラズパイへのアウトバウンド疎通を確認する。
 2. ラズパイ側: `docker-run-for-raspi.sh` でコンテナを起動し、`ss -tlnp | grep 7447` などでルーターが待受していることを確認する。
-3. PC側: devcontainerを再ビルド・起動し、以下でテスト用のメッセージを配信する。
+3. PC側: devcontainerを再ビルド・起動し、`rmw_zenohd` を起動する(自動起動の仕組みは現状無いため手動で実行する)。
+   ```bash
+   ros2 run rmw_zenoh_cpp rmw_zenohd
+   ```
+4. 別ターミナルからdevcontainerに入り、テスト用のメッセージを配信する。
    ```bash
    ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.1}}"
    ```
-4. ラズパイ側で購読できているか確認する。
+5. ラズパイ側で購読できているか確認する。
    ```bash
    ros2 topic echo /cmd_vel
    ```
-5. 逆方向(ラズパイ→PC)のトピックも同様に確認する。
-6. 届かない場合の切り分け:
+6. 逆方向(ラズパイ→PC)のトピックも同様に確認する。
+7. 届かない場合の切り分け:
    - `ros2 topic list` を両側で実行し、相手側のトピックが見えているか
    - PC側の `rmw_zenohd` ログ(`/tmp/rmw_zenohd.log`)でラズパイ側ルーターへの接続が確立しているか
    - ラズパイ側ファイアウォールでTCP 7447がブロックされていないか
