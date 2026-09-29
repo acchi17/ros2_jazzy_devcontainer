@@ -6,6 +6,20 @@ from geometry_msgs.msg import Twist
 from .twist_mapper import TwistMapper
 from .pwm_driver import PwmDriver
 
+# GPIO pin numbers
+ESC_GPIO_PIN = 18
+SERVO_GPIO_PIN = 17
+
+# ESC pulse width spec (gpiozero default values: 1ms-2ms, 50Hz)
+ESC_MIN_PULSE_WIDTH = 1 / 1000
+ESC_MAX_PULSE_WIDTH = 2 / 1000
+ESC_FRAME_WIDTH = 20 / 1000
+
+# SG90-compatible servo pulse width spec (datasheet: 500us-2400us, 50Hz)
+SG90_MIN_PULSE_WIDTH = 0.5 / 1000
+SG90_MAX_PULSE_WIDTH = 2.4 / 1000
+SG90_FRAME_WIDTH = 20 / 1000
+
 class TwistToPwmNode(Node):
     def __init__(self):
         super().__init__('twist_to_pwm')
@@ -14,8 +28,20 @@ class TwistToPwmNode(Node):
         use_mock_gpio = self.get_parameter('use_mock_gpio').get_parameter_value().bool_value
 
         self.mapper = TwistMapper(max_speed=1.0, max_turn=1.0)
-        self.esc = PwmDriver(gpio_pin=18, use_mock_gpio=use_mock_gpio)   # 例: ESC
-        self.servo = PwmDriver(gpio_pin=19, use_mock_gpio=use_mock_gpio) # 例: Steering Servo
+        self.esc = PwmDriver(
+            gpio_pin=ESC_GPIO_PIN,
+            use_mock_gpio=use_mock_gpio,
+            min_pulse_width=ESC_MIN_PULSE_WIDTH,
+            max_pulse_width=ESC_MAX_PULSE_WIDTH,
+            frame_width=ESC_FRAME_WIDTH,
+        )
+        self.servo = PwmDriver(
+            gpio_pin=SERVO_GPIO_PIN,
+            use_mock_gpio=use_mock_gpio,
+            min_pulse_width=SG90_MIN_PULSE_WIDTH,
+            max_pulse_width=SG90_MAX_PULSE_WIDTH,
+            frame_width=SG90_FRAME_WIDTH,
+        )
 
         topic_name = '/cmd_vel'
         qos_depth = 10
