@@ -19,7 +19,7 @@ jobs:
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       issues: read
       id-token: write
@@ -48,6 +48,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           base_branch: ${{ steps.extract_branch.outputs.branch_name }}
           # This is an optional setting that allows Claude to read CI results on PRs
           additional_permissions: |
@@ -64,7 +65,7 @@ jobs:
       - name: Create Pull Request
         if: steps.claude.outputs.conclusion == 'success' && steps.claude.outputs.branch_name != ''
         env:
-          GH_TOKEN: ${{ steps.claude.outputs.github_token || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HEAD_BRANCH: ${{ steps.claude.outputs.branch_name }}
           BASE_BRANCH: ${{ steps.extract_branch.outputs.branch_name || github.event.repository.default_branch }}
         run: |
