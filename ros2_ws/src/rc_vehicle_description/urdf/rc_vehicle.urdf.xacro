@@ -1,0 +1,182 @@
+<?xml version="1.0"?>
+<!--
+  Logical robot model of the RC vehicle (bicycle model).
+
+  Frames:
+    base_footprint        ground projection of base_link
+    base_link             center of the rear axle (bicycle-model reference point)
+    chassis_link          vehicle body (visual only)
+    rear_wheel_link       virtual rear traction wheel   <- traction_joint (continuous)
+    front_steering_link   virtual front steering knuckle <- steering_joint (revolute)
+    front_wheel_link      virtual front wheel (fixed to the steering knuckle)
+
+  Geometry values below are placeholders and must be replaced with values
+  measured on the actual vehicle. wheelbase / wheel_radius must stay
+  consistent with the bicycle_steering_controller parameters in
+  rc_vehicle_bringup/config/controllers.yaml.
+
+  Usage:
+    xacro rc_vehicle.urdf.xacro [use_mock_hardware:=true] [wheelbase:=0.26] ...
+-->
+<robot name="rc_vehicle" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ===== Arguments ===== -->
+  <xacro:arg name="use_mock_hardware" default="false"/>
+  <xacro:arg name="hardware_plugin" default="rc_driver/RcDriverHardware"/>
+
+  <!-- Vehicle geometry [m] -->
+  <xacro:arg name="wheelbase" default="0.26"/>
+  <xacro:arg name="wheel_radius" default="0.05"/>
+  <xacro:arg name="wheel_width" default="0.04"/>
+  <xacro:arg name="chassis_length" default="0.40"/>
+  <xacro:arg name="chassis_width" default="0.18"/>
+  <xacro:arg name="chassis_height" default="0.08"/>
+
+  <!-- Joint limits -->
+  <xacro:arg name="max_steering_angle" default="0.5"/>      <!-- [rad] -->
+  <xacro:arg name="max_traction_velocity" default="60.0"/>  <!-- [rad/s] -->
+
+  <xacro:property name="wheelbase" value="$(arg wheelbase)"/>
+  <xacro:property name="wheel_radius" value="$(arg wheel_radius)"/>
+  <xacro:property name="wheel_width" value="$(arg wheel_width)"/>
+  <xacro:property name="chassis_length" value="$(arg chassis_length)"/>
+  <xacro:property name="chassis_width" value="$(arg chassis_width)"/>
+  <xacro:property name="chassis_height" value="$(arg chassis_height)"/>
+  <xacro:property name="max_steering_angle" value="$(arg max_steering_angle)"/>
+  <xacro:property name="max_traction_velocity" value="$(arg max_traction_velocity)"/>
+
+  <!-- Masses [kg] (placeholders) -->
+  <xacro:property name="chassis_mass" value="1.2"/>
+  <xacro:property name="wheel_mass" value="0.1"/>
+  <xacro:property name="knuckle_mass" value="0.01"/>
+
+  <xacro:include filename="$(find rc_vehicle_description)/ros2_control/rc_vehicle.ros2_control.xacro"/>
+
+  <!-- ===== Materials ===== -->
+  <material name="blue">
+    <color rgba="0.1 0.3 0.8 1.0"/>
+  </material>
+  <material name="black">
+    <color rgba="0.1 0.1 0.1 1.0"/>
+  </material>
+
+  <!-- ===== Inertia helpers ===== -->
+  <xacro:macro name="box_inertial" params="mass x y z">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia ixx="${mass * (y*y + z*z) / 12.0}" ixy="0.0" ixz="0.0"
+               iyy="${mass * (x*x + z*z) / 12.0}" iyz="0.0"
+               izz="${mass * (x*x + y*y) / 12.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Cylinder whose axis is aligned with the link's y-axis -->
+  <xacro:macro name="wheel_inertial" params="mass radius width">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia ixx="${mass * (3*radius*radius + width*width) / 12.0}" ixy="0.0" ixz="0.0"
+               iyy="${mass * radius * radius / 2.0}" iyz="0.0"
+               izz="${mass * (3*radius*radius + width*width) / 12.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="wheel_link" params="name">
+    <link name="${name}">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <xacro:wheel_inertial mass="${wheel_mass}" radius="${wheel_radius}" width="${wheel_width}"/>
+    </link>
+  </xacro:macro>
+
+  <!-- ===== Links / joints ===== -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base_link"/>
+
+  <joint name="chassis_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="chassis_link"/>
+    <origin xyz="${wheelbase / 2.0} 0 ${chassis_height / 2.0}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="chassis_link">
+    <visual>
+      <geometry>
+        <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${chassis_length} ${chassis_width} ${chassis_height}"/>
+      </geometry>
+    </collision>
+    <xacro:box_inertial mass="${chassis_mass}" x="${chassis_length}" y="${chassis_width}" z="${chassis_height}"/>
+  </link>
+
+  <!-- Virtual rear traction joint (single ESC/drive command) -->
+  <joint name="traction_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="rear_wheel_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="10.0" velocity="${max_traction_velocity}"/>
+  </joint>
+
+  <xacro:wheel_link name="rear_wheel_link"/>
+
+  <!-- Virtual front steering joint (single steering-servo command) -->
+  <joint name="steering_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="front_steering_link"/>
+    <origin xyz="${wheelbase} 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-max_steering_angle}" upper="${max_steering_angle}" effort="1.0" velocity="5.0"/>
+  </joint>
+
+  <link name="front_steering_link">
+    <inertial>
+      <mass value="${knuckle_mass}"/>
+      <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6"/>
+    </inertial>
+  </link>
+
+  <!--
+    The front wheel is fixed to the steering knuckle so that its TF is always
+    available without an extra passive joint state (the front wheel is not
+    part of the ros2_control interface).
+  -->
+  <joint name="front_wheel_joint" type="fixed">
+    <parent link="front_steering_link"/>
+    <child link="front_wheel_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:wheel_link name="front_wheel_link"/>
+
+  <!-- ===== ros2_control ===== -->
+  <xacro:rc_vehicle_ros2_control
+    name="RcVehicleSystem"
+    hardware_plugin="$(arg hardware_plugin)"
+    use_mock_hardware="$(arg use_mock_hardware)"
+    max_steering_angle="${max_steering_angle}"
+    max_traction_velocity="${max_traction_velocity}"/>
+
+</robot>
