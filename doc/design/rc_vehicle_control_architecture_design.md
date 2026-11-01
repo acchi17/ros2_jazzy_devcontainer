@@ -62,7 +62,7 @@ feasible (v, omega)"| BSC
 
 ## 4. Package responsibilities and interfaces
 
-### 4.1 `rc_vehicle_description`
+### [Resolved] 4.1 `rc_vehicle_description`
 
 **Responsibility:** Define the RC vehicle's logical robot model and its `ros2_control` interfaces.
 
@@ -99,7 +99,7 @@ traction_joint/velocity
 
 This package contains description rather than runtime conversion logic.
 
-### 4.2 `rc_vehicle_command`
+### [Open] 4.2 `rc_vehicle_command`
 
 **Responsibility:** Convert an upper-layer body-velocity request into a body-velocity request that satisfies the kinematic constraints of the bicycle/Ackermann-type vehicle.
 
@@ -148,7 +148,7 @@ where `L` is wheelbase and `delta_max` is the permitted steering angle.
 
 This component must not generate PWM and should not implement servo/ESC-specific calibration.
 
-### 4.3 `bicycle_steering_controller` (ROS 2 existing package)
+### [Open] 4.3 `bicycle_steering_controller` (ROS 2 existing package)
 
 **Responsibility:** Perform bicycle-model inverse kinematics and provide steering and traction commands through `ros2_control`.
 
@@ -184,7 +184,7 @@ traction_joint/velocity    [rad/s]
 
 The controller also supports state feedback/odometry facilities provided by the steering controller framework.
 
-### 4.4 `rc_driver`
+### [Open] 4.4 `rc_driver`
 
 **Responsibility:** Implement the `ros2_control` hardware interface and translate physical joint commands into signals understood by the actual RC hardware.
 
@@ -229,7 +229,7 @@ Hardware-specific responsibilities include:
 - Hardware enable/disable and safe-output behavior.
 - Sensor acquisition, if available.
 
-### 4.5 `rc_vehicle_bringup`
+### [Open] 4.5 `rc_vehicle_bringup`
 
 **Responsibility:** Compose, configure, and launch the complete RC vehicle control system.
 
