@@ -48,10 +48,10 @@ graph TB
    - WSL2はWindows上でLinuxカーネルを実行するための技術的な基盤です。
    - 図中の「Docker Desktop専用ディストロ」は、Docker Desktopのインストール時に自動的に作成される隠しディストロ（`docker-desktop`、`docker-desktop-data`）です。ユーザーが意識的にセットアップする必要はなく、Dockerエンジン（dockerd）とコンテナはこの中で動作します。
    - 図中の「ROS2 devcontainer」は、`.devcontainer/Dockerfile`で定義されたDockerコンテナを指します。このコンテナには以下が含まれています。
-     - ROS2 Iron（ベースイメージ）
+     - ROS2 Jazzy（ベースイメージ）
      - Gazeboシミュレーター
      - 開発ツール（コンパイラ、デバッガなど）
-     - ROS2ワークスペース（/home/vscode/ros2_projects）
+     - ROS2ワークスペース（/home/ubuntu/work）
      また、`.devcontainer/devcontainer.json`によって、VSCodeとの統合、ボリュームマウント、X11転送などが設定されています。
    - Docker Desktop専用ディストロ内でDockerエンジンが動作し、ROS2 devcontainerを構築・実行します。
    - この階層構造により、Windows上でLinuxアプリケーションを効率的に実行できます。

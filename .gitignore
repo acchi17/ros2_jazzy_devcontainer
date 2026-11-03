@@ -16,3 +16,4 @@ __pycache__/
 /*.md
 /*.txt
 !/README.md
+!/CLAUDE.md

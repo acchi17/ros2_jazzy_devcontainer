@@ -99,7 +99,7 @@ traction_joint/velocity
 
 This package contains description rather than runtime conversion logic.
 
-### [Open] 4.2 `rc_vehicle_command`
+### [Resolved] 4.2 `rc_vehicle_command`
 
 **Responsibility:** Convert an upper-layer body-velocity request into a body-velocity request that satisfies the kinematic constraints of the bicycle/Ackermann-type vehicle.
 

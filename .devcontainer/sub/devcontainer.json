@@ -1,0 +1,36 @@
+{
+	// Dev Container name (not Container name)
+	"name": "ros2_sub",
+	// Change the default user from root user
+	"remoteUser": "ubuntu",
+	// Specify where in the Container to place the workspace opened in VSCode.
+	"workspaceFolder": "/home/ubuntu/work",
+	// Mount setting
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/ubuntu/work,type=bind,consistency=cached",
+	// Other settings
+	"build": {
+		"dockerfile": "Dockerfile.raspi"
+	},
+	// Same container options as docker_script/docker-run-for-raspi.sh.
+	// Requires GPIO_GID (host gpio group id) to be set in the host environment:
+	//   export GPIO_GID=$(getent group gpio | cut -d: -f3)
+	"runArgs": [
+		"--network", "host",
+		"--device=/dev/gpiochip0",
+		"--group-add", "${localEnv:GPIO_GID}"
+	],
+	"containerEnv": {
+		"ROS_DOMAIN_ID": "30",
+		"RMW_IMPLEMENTATION": "rmw_zenoh_cpp",
+		"ZENOH_ROUTER_CONFIG_URI": "/home/ubuntu/work/zenoh/raspi_router_config.json5",
+		"ZENOH_SESSION_CONFIG_URI": "/home/ubuntu/work/zenoh/raspi_session_config.json5"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance"
+			]
+		}
+	}
+}
