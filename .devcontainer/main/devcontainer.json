@@ -31,6 +31,5 @@
 				"jupyter.alwaysTrustNotebooks": true
 			}
 		}
-	},
-	"postCreateCommand": "sudo chown -R ubuntu:ubuntu /home/ubuntu/work"
+	}
 }
