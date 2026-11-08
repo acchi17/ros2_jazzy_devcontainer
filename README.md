@@ -32,7 +32,7 @@ The PC-side router initiates an outbound-only TCP connection to the Raspberry Pi
 ## 2. Starting the ROS 2 node on the Raspberry Pi side
 
 ### Build the image (via GitHub Actions)
-Building and pushing the image requires a Docker Hub account. The ARM64 image is built from [.devcontainer/Dockerfile.raspi](.devcontainer/Dockerfile.raspi) using the [.github/workflows/build-image-arm64.yml](.github/workflows/build-image-arm64.yml) workflow, and pushed to Docker Hub with a timestamp tag.
+Building and pushing the image requires a Docker Hub account. The ARM64 image is built from [.devcontainer/sub/Dockerfile.raspi](.devcontainer/sub/Dockerfile.raspi) using the [.github/workflows/build-image-arm64.yml](.github/workflows/build-image-arm64.yml) workflow, and pushed to Docker Hub with a timestamp tag.
 
 1) Create repository secrets (Settings → Secrets and variables → Actions):
    - `DOCKERHUB_USERNAME`: Your Docker Hub username
@@ -80,7 +80,7 @@ On startup it launches `rmw_zenohd` in the background, then builds the workspace
 ## 3. Starting the ROS 2 node on the PC devcontainer side
 
 ### Windows + WSL2 prerequisites
-The main devcontainer ([.devcontainer/devcontainer.json](.devcontainer/devcontainer.json)) runs ROS 2 GUI tools (Gazebo, RViz2) that are displayed on the Windows desktop via WSLg. Whenever VS Code's Dev Containers extension detects WSLg, it automatically adds a bind mount for the WSLg Wayland socket (`\\wsl.localhost\<default-distro>\mnt\wslg\runtime-dir\wayland-0`), sourced from your **default WSL distro** — regardless of whether this project's own config requests it. Because of this, before running "Reopen in Container" make sure all of the following are true:
+The main devcontainer ([.devcontainer/main/devcontainer.json](.devcontainer/main/devcontainer.json)) runs ROS 2 GUI tools (Gazebo, RViz2) that are displayed on the Windows desktop via WSLg. Whenever VS Code's Dev Containers extension detects WSLg, it automatically adds a bind mount for the WSLg Wayland socket (`\\wsl.localhost\<default-distro>\mnt\wslg\runtime-dir\wayland-0`), sourced from your **default WSL distro** — regardless of whether this project's own config requests it. Because of this, before running "Reopen in Container" make sure all of the following are true:
 
 1. At least one WSL2 distro is installed and set as default (check with `wsl -l -v`; the default is marked with `*`).
 2. Docker Desktop's WSL Integration is enabled for that distro (Settings → Resources → WSL Integration → enable that distro → Apply & Restart).
@@ -117,4 +117,4 @@ Before opening the devcontainer, set the Raspberry Pi's LAN IP in [zenoh/pc_rout
 
 ## References
 - Workflow: [.github/workflows/build-image-arm64.yml](.github/workflows/build-image-arm64.yml)
-- Dockerfile (ARM64): [.devcontainer/Dockerfile.raspi](.devcontainer/Dockerfile.raspi)
+- Dockerfile (ARM64): [.devcontainer/sub/Dockerfile.raspi](.devcontainer/sub/Dockerfile.raspi)

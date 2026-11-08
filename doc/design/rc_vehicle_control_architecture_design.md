@@ -10,7 +10,7 @@ This document defines the ROS 2 control architecture for an RC car with one stee
 
 1. `rc_vehicle_description`
 2. `rc_vehicle_command`
-3. `rc_driver`
+3. `rc_vehicle_driver`
 4. `rc_vehicle_bringup`
 
 ### Existing ROS 2 package
@@ -38,7 +38,7 @@ Bicycle inverse kinematics
 [rad]"]
     TJ["traction_joint/velocity
 [rad/s]"]
-    DRV["rc_driver
+    DRV["rc_vehicle_driver
 Hardware Interface
 
 steering angle -> PWM
@@ -148,7 +148,7 @@ where `L` is wheelbase and `delta_max` is the permitted steering angle.
 
 This component must not generate PWM and should not implement servo/ESC-specific calibration.
 
-### [Open] 4.3 `bicycle_steering_controller` (ROS 2 existing package)
+### [Resolved] 4.3 `bicycle_steering_controller` (ROS 2 existing package)
 
 **Responsibility:** Perform bicycle-model inverse kinematics and provide steering and traction commands through `ros2_control`.
 
@@ -175,7 +175,7 @@ Relevant configuration includes:
 - wheelbase
 - traction wheel radius
 
-Output to `rc_driver` is not a ROS publish/subscribe connection. It uses `ros2_control` command interfaces:
+Output to `rc_vehicle_driver` is not a ROS publish/subscribe connection. It uses `ros2_control` command interfaces:
 
 ```text
 steering_joint/position    [rad]
@@ -184,7 +184,7 @@ traction_joint/velocity    [rad/s]
 
 The controller also supports state feedback/odometry facilities provided by the steering controller framework.
 
-### [Open] 4.4 `rc_driver`
+### [Resolved] 4.4 `rc_vehicle_driver`
 
 **Responsibility:** Implement the `ros2_control` hardware interface and translate physical joint commands into signals understood by the actual RC hardware.
 
@@ -229,6 +229,14 @@ Hardware-specific responsibilities include:
 - Hardware enable/disable and safe-output behavior.
 - Sensor acquisition, if available.
 
+**Implementation (plugin `rc_vehicle_driver/RcVehicleDriverHardware`, C++ `SystemInterface`):**
+
+- Calibration is piecewise linear and clamped: `0` maps to servo center / ESC neutral, `±max` maps to the left/right or forward/reverse pulse width. Positive steering is a left turn. `max` is the `max` of the joint's command interface in the URDF, so limits have one source.
+- Hardware parameters (defaults in the plugin): `servo_center_pulse_us`, `servo_left_pulse_us`, `servo_right_pulse_us`, `esc_neutral_pulse_us`, `esc_forward_pulse_us`, `esc_reverse_pulse_us`, `gpiochip`, `esc_gpio_pin`, `servo_gpio_pin`, `pwm_frequency_hz`, `use_mock_gpio`. Pulse widths are placeholders to be calibrated on the vehicle.
+- PWM output uses `liblgpio` (`lgTxServo`). Without it the plugin builds but runs only with `use_mock_gpio:=true`.
+- Feedback strategy: there are no sensors, so State Interfaces are open-loop and report the last applied (clamped) command. They are not measurements.
+- Safe output: on activate, deactivate, shutdown, error and any PWM I/O failure, the servo is set to center and the ESC to neutral before the GPIOs are released. A PWM failure in `write()` returns `ERROR`.
+
 ### [Open] 4.5 `rc_vehicle_bringup`
 
 **Responsibility:** Compose, configure, and launch the complete RC vehicle control system.
@@ -251,7 +259,7 @@ rc_vehicle_bringup/
 The launch process should normally:
 
 1. Build/load `robot_description` from `rc_vehicle_description`.
-2. Start `ros2_control` / `controller_manager` with the `rc_driver` hardware plugin.
+2. Start `ros2_control` / `controller_manager` with the `rc_vehicle_driver` hardware plugin.
 3. Load and activate `bicycle_steering_controller`.
 4. Start the `rc_vehicle_command` Vehicle Command Adapter.
 5. Establish topic names/remappings needed for the upstream navigation stack.
@@ -262,11 +270,11 @@ The launch process should normally:
 |---|---|---|---|---|
 | Nav2 | `rc_vehicle_command` | ROS 2 topic | `/cmd_vel`, `geometry_msgs/msg/Twist` | `linear.x` m/s, `angular.z` rad/s |
 | `rc_vehicle_command` | `bicycle_steering_controller` | ROS 2 topic | `<controller>/reference`, `geometry_msgs/msg/TwistStamped` | feasible `linear.x` m/s, `angular.z` rad/s |
-| `bicycle_steering_controller` | `rc_driver` | `ros2_control` Command Interface | `steering_joint/position` | steering position [rad] |
-| `bicycle_steering_controller` | `rc_driver` | `ros2_control` Command Interface | `traction_joint/velocity` | traction-wheel angular velocity [rad/s] |
-| `rc_driver` | steering servo | hardware/PWM | steering PWM | hardware-dependent |
-| `rc_driver` | ESC | hardware/PWM | ESC PWM | hardware-dependent |
-| `rc_driver` | controller framework | `ros2_control` State Interface | steering/traction states | available measured state |
+| `bicycle_steering_controller` | `rc_vehicle_driver` | `ros2_control` Command Interface | `steering_joint/position` | steering position [rad] |
+| `bicycle_steering_controller` | `rc_vehicle_driver` | `ros2_control` Command Interface | `traction_joint/velocity` | traction-wheel angular velocity [rad/s] |
+| `rc_vehicle_driver` | steering servo | hardware/PWM | steering PWM | hardware-dependent |
+| `rc_vehicle_driver` | ESC | hardware/PWM | ESC PWM | hardware-dependent |
+| `rc_vehicle_driver` | controller framework | `ros2_control` State Interface | steering/traction states | available measured state |
 | `rc_vehicle_description` | `controller_manager` / hardware | URDF/Xacro | joints + `<ros2_control>` definition | structural/runtime binding |
 | `rc_vehicle_bringup` | whole system | launch + YAML | controller/adapter configuration | runtime composition |
 
@@ -282,7 +290,7 @@ bicycle_steering_controller
   Question: Which steering angle and traction-wheel velocity realize
             the feasible body velocity under the bicycle model?
 
-rc_driver
+rc_vehicle_driver
   Question: Which hardware commands/PWM values realize the requested
             steering angle and traction velocity on this specific RC car?
 ```
@@ -290,8 +298,8 @@ rc_driver
 Consequently:
 
 - PWM knowledge must not leak into `rc_vehicle_command` or `bicycle_steering_controller`.
-- Bicycle inverse kinematics should not be duplicated in `rc_driver`.
-- Servo/ESC calibration belongs to `rc_driver`.
+- Bicycle inverse kinematics should not be duplicated in `rc_vehicle_driver`.
+- Servo/ESC calibration belongs to `rc_vehicle_driver`.
 - Launch-time wiring and controller parameters belong to `rc_vehicle_bringup`.
 - Robot/joint/interface definitions belong to `rc_vehicle_description`.
 
@@ -307,10 +315,10 @@ For one command cycle:
 5. bicycle_steering_controller performs bicycle inverse kinematics.
 6. The controller writes steering_joint/position and
    traction_joint/velocity command interfaces.
-7. controller_manager invokes the rc_driver hardware write path.
-8. rc_driver maps the two physical commands to calibrated PWM outputs.
+7. controller_manager invokes the rc_vehicle_driver hardware write path.
+8. rc_vehicle_driver maps the two physical commands to calibrated PWM outputs.
 9. The servo and ESC actuate the RC vehicle.
-10. When sensors are present, rc_driver reads state and exposes it through
+10. When sensors are present, rc_vehicle_driver reads state and exposes it through
     ros2_control State Interfaces for controller/odometry use.
 ```
 
@@ -336,7 +344,7 @@ rc_vehicle_bringup/config/controllers.yaml
   - steering and traction joint names
   - controller runtime settings
 
-rc_driver
+rc_vehicle_driver
   - hardware communication implementation
   - PWM conversion/calibration implementation
 ```

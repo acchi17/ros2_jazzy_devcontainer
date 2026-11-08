@@ -89,7 +89,7 @@ This tag declares which joints `ros2_control` commands or reads, and which hardw
 
 ```xml
 <ros2_control name="RcVehicleSystem" type="system">
-  <hardware><plugin>rc_driver/RcDriverHardware</plugin></hardware>
+  <hardware><plugin>rc_vehicle_driver/RcVehicleDriverHardware</plugin></hardware>
   <joint name="traction_joint">
     <command_interface name="velocity"/>
     <state_interface name="velocity"/>

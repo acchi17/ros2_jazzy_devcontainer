@@ -31,7 +31,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: .devcontainer/Dockerfile.raspi
+          file: .devcontainer/sub/Dockerfile.raspi
           platforms: linux/arm64
           push: true
           tags: |

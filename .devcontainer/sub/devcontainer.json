@@ -11,14 +11,6 @@
 	"build": {
 		"dockerfile": "Dockerfile.raspi"
 	},
-	// Same container options as docker_script/docker-run-for-raspi.sh.
-	// Requires GPIO_GID (host gpio group id) to be set in the host environment:
-	//   export GPIO_GID=$(getent group gpio | cut -d: -f3)
-	"runArgs": [
-		"--network", "host",
-		"--device=/dev/gpiochip0",
-		"--group-add", "${localEnv:GPIO_GID}"
-	],
 	"containerEnv": {
 		"ROS_DOMAIN_ID": "30",
 		"RMW_IMPLEMENTATION": "rmw_zenoh_cpp",

@@ -22,7 +22,8 @@
 
   <!-- ===== Arguments ===== -->
   <xacro:arg name="use_mock_hardware" default="false"/>
-  <xacro:arg name="hardware_plugin" default="rc_driver/RcDriverHardware"/>
+  <xacro:arg name="use_mock_gpio" default="false"/>
+  <xacro:arg name="hardware_plugin" default="rc_vehicle_driver/RcVehicleDriverHardware"/>
 
   <!-- Vehicle geometry [m] -->
   <xacro:arg name="wheelbase" default="0.26"/>
@@ -176,6 +177,7 @@
     name="RcVehicleSystem"
     hardware_plugin="$(arg hardware_plugin)"
     use_mock_hardware="$(arg use_mock_hardware)"
+    use_mock_gpio="$(arg use_mock_gpio)"
     max_steering_angle="${max_steering_angle}"
     max_traction_velocity="${max_traction_velocity}"/>
 

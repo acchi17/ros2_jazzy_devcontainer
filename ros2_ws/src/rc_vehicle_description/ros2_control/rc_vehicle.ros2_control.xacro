@@ -6,7 +6,7 @@
     steering_joint/position  [rad]    (command + state)
     traction_joint/velocity  [rad/s]  (command + state)
 
-  The hardware plugin is expected to be provided by rc_driver.
+  The hardware plugin is expected to be provided by rc_vehicle_driver.
   Set use_mock_hardware:=true to run with mock_components/GenericSystem
   (commands are mirrored to states) until the real plugin is available.
 -->
@@ -14,8 +14,9 @@
 
   <xacro:macro name="rc_vehicle_ros2_control"
                params="name
-                       hardware_plugin:=rc_driver/RcDriverHardware
+                       hardware_plugin:=rc_vehicle_driver/RcVehicleDriverHardware
                        use_mock_hardware:=false
+                       use_mock_gpio:=false
                        max_steering_angle
                        max_traction_velocity">
 
@@ -27,6 +28,8 @@
         </xacro:if>
         <xacro:unless value="${use_mock_hardware}">
           <plugin>${hardware_plugin}</plugin>
+          <!-- true: run rc_vehicle_driver without GPIO (no PWM output) -->
+          <param name="use_mock_gpio">${use_mock_gpio}</param>
         </xacro:unless>
       </hardware>
 

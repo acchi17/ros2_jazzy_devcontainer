@@ -1,0 +1,10 @@
+<library path="rc_vehicle_driver">
+  <class name="rc_vehicle_driver/RcVehicleDriverHardware"
+         type="rc_vehicle_driver::RcVehicleDriverHardware"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control system interface for an RC vehicle: steering_joint/position
+      is mapped to servo PWM and traction_joint/velocity to ESC PWM.
+    </description>
+  </class>
+</library>

@@ -1,5 +1,6 @@
 # Download base image if it doesn't exist locally
-FROM arm64v8/ros:jazzy-perception
+#FROM arm64v8/ros:jazzy-perception
+FROM ros:jazzy-perception
 
 # Install required packages
 RUN apt-get update && \
@@ -20,6 +21,7 @@ RUN apt-get update && \
     python3-vcstool \
     python3-gpiozero \
     python3-lgpio \
+    liblgpio-dev \
     sudo \
     vim \
     wget \
